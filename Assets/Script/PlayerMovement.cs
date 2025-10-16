@@ -8,6 +8,7 @@ public class PlayerMovement : MonoBehaviour
 
     [SerializeField] private float speed;       // kecepatan gerak kiri-kanan
     [SerializeField] private float jumpForce;   // kekuatan lompat
+    [SerializeField] private bool allowAirAttack = true; // apakah pemain boleh menyerang saat di udara
 
     private int jumpCount = 0;                  // menghitung jumlah lompatan
     [SerializeField] private int maxJumps = 2;  // jumlah maksimum lompatan (2 = double jump)
@@ -24,6 +25,7 @@ public class PlayerMovement : MonoBehaviour
         float horizontalInput = Input.GetAxis("Horizontal");
 
         // Gerak kiri-kanan
+        // gunakan properti velocity (API Unity) bukan linearVelocity
         body.linearVelocity = new Vector2(horizontalInput * speed, body.linearVelocity.y);
 
         // Set parameter animator
@@ -66,7 +68,7 @@ public class PlayerMovement : MonoBehaviour
     // Fungsi baru untuk cek apakah karakter bisa menyerang
     public bool canAttack()
     {
-        // Contoh: karakter bisa menyerang hanya saat berada di tanah
-        return grounded;
+        // Jika allowAirAttack diaktifkan, pemain bisa menyerang meskipun tidak grounded
+        return grounded || allowAirAttack;
     }
 }

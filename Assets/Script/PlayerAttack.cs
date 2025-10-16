@@ -17,21 +17,71 @@ public class PlayerAttack : MonoBehaviour
 
     private void Update()
     {
-        // Jika klik kiri, cooldown sudah lewat, dan pemain boleh menyerang
-        if (Input.GetMouseButton(0) && cooldownTimer > attackCooldown && playerMovement.canAttack())
+        // Increase timer
+        cooldownTimer += Time.deltaTime;
+
+        // Jika klik kiri (tekan), cooldown sudah lewat, dan pemain boleh menyerang
+        if (Input.GetMouseButtonDown(0) && cooldownTimer > attackCooldown && playerMovement != null && playerMovement.canAttack())
         {
             Attack(); // Panggil fungsi serangan
         }
-
-        cooldownTimer += Time.deltaTime; // Tambahkan waktu setiap frame
     }
 
     private void Attack()
     {
-        anim.SetTrigger("attack"); // Aktifkan animasi serangan
-        cooldownTimer = 0;         // Reset timer cooldown
+        if (anim != null) anim.SetTrigger("attack"); // Aktifkan animasi serangan
+        cooldownTimer = 0f; // Reset timer cooldown
 
-        Magic[0].transform.position = MagicPoint.position;
-        Magic[0].GetComponent<Projectile>().SetDirection(Mathf.Sign(transform.localScale.x));
+        if (Magic == null || Magic.Length == 0)
+        {
+            Debug.LogWarning("PlayerAttack: No Magic projectile assigned.");
+            return;
+        }
+
+        // Try to find an inactive projectile in the Magic array
+        GameObject projectileObj = null;
+        for (int i = 0; i < Magic.Length; i++)
+        {
+            if (Magic[i] == null) continue;
+            if (!Magic[i].activeInHierarchy)
+            {
+                projectileObj = Magic[i];
+                break;
+            }
+        }
+
+        // If none inactive found, try to instantiate a new one from Magic[0] (if it's a prefab)
+        if (projectileObj == null)
+        {
+            // If Magic[0] is a prefab (not in scene) we can instantiate it. Otherwise we'll reuse Magic[0].
+            if (Application.isPlaying)
+            {
+                try
+                {
+                    projectileObj = Instantiate(Magic[0]);
+                }
+                catch
+                {
+                    // Fallback: reuse first element
+                    projectileObj = Magic[0];
+                }
+            }
+            else
+            {
+                projectileObj = Magic[0];
+            }
+        }
+
+        if (projectileObj != null)
+        {
+            Vector3 spawnPos = (MagicPoint != null) ? MagicPoint.position : transform.position;
+            projectileObj.transform.position = spawnPos;
+            projectileObj.SetActive(true);
+            Projectile p = projectileObj.GetComponent<Projectile>();
+            if (p != null)
+                p.SetDirection(Mathf.Sign(transform.localScale.x));
+            else
+                Debug.LogWarning("PlayerAttack: Selected Magic object has no Projectile component.");
+        }
     }
 }
